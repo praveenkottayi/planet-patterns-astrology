@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import swisseph as swe
 
+# ─── Zodiac & nakshatra constants ─────────────────────────────────────────────
+
 RASIS = [
     "Medam", "Edavam", "Mithuna", "Karkata", "Chingam", "Kanni",
     "Tula", "Vrischika", "Dhanu", "Makara", "Kumba", "Meena",
@@ -20,7 +22,9 @@ NAKSHATRAS = [
     "Pooruruttathi", "Uthrattathi", "Revathi",
 ]
 
-# 120-year Vimshottari cycle; lords repeat every 9 nakshatras
+# ─── Vimshottari Dasa ─────────────────────────────────────────────────────────
+
+# 120-year cycle; each nakshatra group of 9 repeats in the same order
 DASA_SEQUENCE = [
     ("Ketu", 7), ("Venus", 20), ("Sun", 6), ("Moon", 10), ("Mars", 7),
     ("Rahu", 18), ("Jupiter", 16), ("Saturn", 19), ("Mercury", 17),
@@ -28,6 +32,8 @@ DASA_SEQUENCE = [
 NAK_LORDS = [
     "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury",
 ] * 3
+
+# ─── Planet identifiers ───────────────────────────────────────────────────────
 
 PLANETS = {
     "Sun": swe.SUN, "Moon": swe.MOON, "Mercury": swe.MERCURY,
@@ -42,10 +48,16 @@ SHORT = {
 
 YEAR_DAYS = 365.25
 
-EXALT = {"Sun": 0, "Moon": 1, "Mars": 9, "Mercury": 5, "Jupiter": 3, "Venus": 11, "Saturn": 6}
+# ─── Dignity tables ───────────────────────────────────────────────────────────
+
+EXALT  = {"Sun": 0, "Moon": 1, "Mars": 9, "Mercury": 5, "Jupiter": 3, "Venus": 11, "Saturn": 6}
 DEBIL  = {"Sun": 6, "Moon": 7, "Mars": 3, "Mercury": 11, "Jupiter": 9, "Venus": 5, "Saturn": 0}
-OWN    = {"Sun": [4], "Moon": [3], "Mars": [0, 7], "Mercury": [2, 5],
-          "Jupiter": [8, 11], "Venus": [1, 6], "Saturn": [9, 10]}
+OWN    = {
+    "Sun": [4], "Moon": [3], "Mars": [0, 7], "Mercury": [2, 5],
+    "Jupiter": [8, 11], "Venus": [1, 6], "Saturn": [9, 10],
+}
+
+# ─── House meanings ───────────────────────────────────────────────────────────
 
 HOUSE_SIGNIFICATIONS = {
     1:  "Self, body, personality, vitality, overall life direction",
@@ -66,6 +78,9 @@ HOUSE_KEYWORDS = {
     6: "Health/Enemies", 7: "Marriage", 8: "Longevity", 9: "Fortune",
     10: "Career", 11: "Income", 12: "Loss/Moksha",
 }
+
+# ─── Planet significations ────────────────────────────────────────────────────
+
 PLANET_KARAKA = {
     "Sun":     "soul, father, authority, vitality, status",
     "Moon":    "mind, mother, emotions, comfort, the public",
@@ -78,6 +93,21 @@ PLANET_KARAKA = {
     "Ketu":    "detachment, spirituality, loss, past karma, liberation",
 }
 
+# Goal → houses to watch for timing (used by the forward scanner)
+GOAL_HOUSES = {
+    "Career & Status":         [10, 2, 11],
+    "Marriage & Partnership":  [7, 2, 11],
+    "Children & Creativity":   [5, 9, 1],
+    "Wealth & Income":         [2, 11, 9],
+    "Health & Vitality":       [1, 6, 8],
+    "Home & Property":         [4, 2, 7],
+    "Fortune & Luck":          [9, 5, 11],
+    "Spirituality & Moksha":   [9, 12, 8],
+    "Foreign Travel":          [12, 9, 3],
+    "Education & Knowledge":   [5, 4, 9],
+}
+
+# ─── Dataclasses ──────────────────────────────────────────────────────────────
 
 @dataclass
 class PlanetPos:
@@ -117,6 +147,8 @@ class Chart:
         return ((rasi_index - self.asc_rasi_index) % 12) + 1
 
 
+# ─── Ephemeris helpers ────────────────────────────────────────────────────────
+
 def local_to_jd(dt_local: datetime, tz_offset_hours: float) -> float:
     dt_utc = dt_local - timedelta(hours=tz_offset_hours)
     hour = dt_utc.hour + dt_utc.minute / 60 + dt_utc.second / 3600
@@ -149,7 +181,7 @@ def build_chart(dt_local: datetime, tz_offset_hours: float,
             deg_in_rasi=lon_p % 30,
             nakshatra=nak,
             pada=pada,
-            # Rahu's speed is always negative in Swiss Eph; treat it as always retrograde
+            # Rahu's speed is always negative in Swiss Eph; treat as always retrograde
             retro=(pos[3] < 0 and name != "Rahu") or (name == "Rahu"),
         )
 
@@ -170,8 +202,10 @@ def build_chart(dt_local: datetime, tz_offset_hours: float,
     )
 
 
+# ─── Vimshottari Dasa ─────────────────────────────────────────────────────────
+
 def vimshottari_periods(moon_longitude: float, birth_local: datetime):
-    """Top-level Maha-dasa periods covering the full 120-year cycle from birth."""
+    """Maha-dasa periods covering the full 120-year Vimshottari cycle from birth."""
     span = 360 / 27
     n_index = int(moon_longitude // span)
     lord = NAK_LORDS[n_index]
@@ -179,7 +213,6 @@ def vimshottari_periods(moon_longitude: float, birth_local: datetime):
 
     seq = DASA_SEQUENCE
     start_i = next(i for i, (l, _) in enumerate(seq) if l == lord)
-
     first_lord, first_len = seq[start_i]
     balance_years = first_len * (1 - frac_elapsed)
 
@@ -223,6 +256,8 @@ def current_dasa(periods, on_date: datetime):
     return None, None, []
 
 
+# ─── Dignity & functional nature ──────────────────────────────────────────────
+
 def dignity(planet_name: str, rasi_index: int) -> str:
     if planet_name in EXALT and EXALT[planet_name] == rasi_index:
         return "Exalted"
@@ -236,6 +271,59 @@ def dignity(planet_name: str, rasi_index: int) -> str:
 def house_from_lagna(rasi_index: int, asc_rasi_index: int) -> int:
     return ((rasi_index - asc_rasi_index) % 12) + 1
 
+
+def functional_nature(planet: str, asc_rasi_index: int) -> dict:
+    """
+    Classifies a planet's functional role for a given Lagna.
+
+    Returns {"label", "color", "explanation"} based on simplified classical rules:
+    - Yogakaraka: owns a pure trikona (5/9) AND a kendra (1/4/7/10) — highest quality
+    - Lagna Lord: owns house 1 — always auspicious regardless of second sign
+    - Benefic: owns 5th or 9th without dusthana
+    - Mixed: owns a trikona+dusthana or kendra+dusthana
+    - Malefic: owns only dusthana (6/8/12)
+    - Neutral: neither trikona nor dusthana
+    - Shadowy: Rahu/Ketu (no sign ownership; adopt the lord they occupy)
+    """
+    if planet in ("Rahu", "Ketu"):
+        return {"label": "Shadowy", "color": "#8B5CF6",
+                "explanation": "Act as the sign lord they occupy; inherently unpredictable."}
+
+    houses = {house_from_lagna(s, asc_rasi_index) for s in OWN.get(planet, [])}
+    tri  = houses & {5, 9}         # pure trikonas (5th/9th; Lagna is handled separately)
+    ken  = houses & {1, 4, 7, 10}  # kendras (angles)
+    dust = houses & {6, 8, 12}     # dusthanas (difficult houses)
+
+    if tri and ken:
+        label, color = "Yogakaraka", "#15803d"
+        exp = (f"Rules H{min(tri)} (trine) and H{min(ken)} (angle) — "
+               f"most powerful dasa lord for {RASIS[asc_rasi_index]} Lagna.")
+    elif 1 in houses:
+        label, color = "Lagna Lord", "#16a34a"
+        note = " Also rules a dusthana; themes may be mixed." if dust else ""
+        exp = f"Rules the 1st house — its dasa reinforces your chart's core direction.{note}"
+    elif tri and not dust:
+        label, color = "Benefic", "#22C55E"
+        exp = f"Trikona lord (H{min(tri)}) — dasa periods tend toward growth and auspiciousness."
+    elif tri and dust:
+        label, color = "Mixed", "#D97706"
+        exp = (f"Rules H{min(tri)} (trine) and H{min(dust)} (dusthana) — "
+               "growth and challenge intertwined; natal strength of the planet matters.")
+    elif dust and not ken:
+        label, color = "Malefic", "#DC2626"
+        exp = (f"Rules only H{min(dust)} (dusthana) — "
+               "dasa may bring obstacles, delays, or karmic pressure.")
+    elif dust and ken:
+        label, color = "Mixed", "#D97706"
+        exp = "Rules both an angle and a dusthana — outcomes depend on natal placement and strength."
+    else:
+        label, color = "Neutral", "#64748b"
+        exp = "Neither trikona nor dusthana lord — moderate results per natural significations."
+
+    return {"label": label, "color": color, "explanation": exp}
+
+
+# ─── House maps & lordships ───────────────────────────────────────────────────
 
 def lagna_house_map(asc_rasi_index: int):
     return [
@@ -260,12 +348,14 @@ def planet_lordships(asc_rasi_index: int):
             "houses_label": " & ".join(str(h) for h in houses),
             "karaka": PLANET_KARAKA.get(planet, ""),
         })
-    # nodes have no sign-rulership
+    # Nodes have no sign-rulership; listed for completeness
     for node in ("Rahu", "Ketu"):
         out.append({"planet": node, "houses_ruled": [], "houses_label": "—",
                     "karaka": PLANET_KARAKA.get(node, "")})
     return out
 
+
+# ─── Motion timeseries ────────────────────────────────────────────────────────
 
 def angular_separation(longitude_a: float, longitude_b: float) -> float:
     """Shortest arc between two sidereal longitudes (0–180°)."""
@@ -275,8 +365,8 @@ def angular_separation(longitude_a: float, longitude_b: float) -> float:
 def planetary_timeseries(start_local, end_local, tz_offset_hours, lat, lon,
                          planet_names=None, step_days=1):
     """
-    Sample sidereal positions over a date range.
-    Returns one dict per (date, planet) with longitude, rasi, retro,
+    Sample sidereal positions at step_days intervals over a date range.
+    Returns one dict per (date, planet) with longitude, rasi, retro flag,
     and phase_sin/phase_cos for smooth motion curves.
     """
     selected = planet_names or (list(PLANETS.keys()) + ["Ketu"])

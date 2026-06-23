@@ -8,9 +8,10 @@ import streamlit as st
 
 from astro_core import (
     build_chart, vimshottari_periods, current_dasa,
-    dignity, planetary_timeseries, lagna_house_map, planet_lordships,
+    dignity, functional_nature, planetary_timeseries,
+    lagna_house_map, planet_lordships,
     RASIS, RASIS_EN, SHORT, PLANETS,
-    HOUSE_KEYWORDS, HOUSE_SIGNIFICATIONS,
+    HOUSE_KEYWORDS, HOUSE_SIGNIFICATIONS, GOAL_HOUSES,
 )
 from chart_render import render_chart_svg
 from motion_viz import (
@@ -20,6 +21,7 @@ from motion_viz import (
     build_sinwave_house_figure,
 )
 
+# ─── Config ───────────────────────────────────────────────────────────────────
 
 def _load_config() -> dict:
     cfg_path = Path(__file__).parent / "config.toml"
@@ -37,6 +39,22 @@ APP_MIN_DATE = date(1900, 1, 1)
 APP_MAX_DATE = date(2100, 12, 31)
 ALL_PLANETS  = list(PLANETS.keys()) + ["Ketu"]
 
+# Slow movers are the most useful for timing windows; fast planets complete
+# all 12 houses in under a year so they're less meaningful for the scanner.
+SLOW_PLANETS = ["Jupiter", "Saturn", "Rahu", "Ketu"]
+
+# Quality label → light background tint for dasa table rows
+_QUALITY_BG = {
+    "Yogakaraka": "#bbf7d0",
+    "Lagna Lord": "#d1fae5",
+    "Benefic":    "#dcfce7",
+    "Mixed":      "#fef3c7",
+    "Neutral":    "#f1f5f9",
+    "Malefic":    "#fee2e2",
+    "Shadowy":    "#ede9fe",
+}
+
+# ─── Utility functions ────────────────────────────────────────────────────────
 
 def ordinal(n: int) -> str:
     return f"{n}{'th' if 11 <= n % 100 <= 13 else {1:'st', 2:'nd', 3:'rd'}.get(n % 10, 'th')}"
@@ -93,7 +111,57 @@ def transit_snapshot_frame(tchart, planet_names) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-# ── Page config & global style ────────────────────────────────────────────────
+def find_house_entries(df: pd.DataFrame, asc_rasi_index: int,
+                       target_houses: list[int]) -> list[dict]:
+    """
+    Detect dates when planets enter target houses from a pre-computed timeseries.
+    Returns rows sorted by entry date with approximate duration in that house.
+    """
+    target_set = set(target_houses)
+    results = []
+
+    for planet, g in df.groupby("planet"):
+        g = g.sort_values("when_local").copy()
+        g["house"] = ((g["longitude"] // 30).astype(int) - asc_rasi_index) % 12 + 1
+
+        # Collect all house transitions for this planet
+        transitions: list[tuple[int, datetime]] = []
+        prev_h = None
+        for _, row in g.iterrows():
+            h = int(row["house"])
+            if h != prev_h:
+                transitions.append((h, row["when_local"]))
+                prev_h = h
+
+        for j, (h, entry_date) in enumerate(transitions):
+            if h not in target_set:
+                continue
+            exit_date = transitions[j + 1][1] if j + 1 < len(transitions) else None
+            duration  = _fmt_duration(entry_date, exit_date) if exit_date else "beyond range"
+            results.append({
+                "Planet":  planet,
+                "Enters":  f"H{h} · {HOUSE_KEYWORDS.get(h, '')}",
+                "Date":    entry_date.strftime("%d %b %Y"),
+                "Duration in house": duration,
+                "_sort":   entry_date,
+            })
+
+    results.sort(key=lambda r: r["_sort"])
+    for r in results:
+        del r["_sort"]
+    return results
+
+
+def _fmt_duration(start: datetime, end: datetime) -> str:
+    days = (end - start).days
+    if days < 60:
+        return f"~{days}d"
+    if days < 365:
+        return f"~{days // 30}mo"
+    return f"~{days / 365:.1f}y"
+
+
+# ─── Page config & global style ───────────────────────────────────────────────
 
 st.set_page_config(page_title="Planet in Motion", page_icon="🪐", layout="wide")
 st.markdown("""
@@ -109,23 +177,23 @@ st.title("🪐 Planet in Motion")
 st.markdown("<span class='small'>Sidereal · Lahiri (Chitra-Paksha) ayanamsa · "
             "powered by the Swiss Ephemeris</span>", unsafe_allow_html=True)
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
+# ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 with st.sidebar:
     st.header("Birth Details")
     name = st.text_input("Name", _PERSON.get("name", ""))
 
-    sex_opts    = ["Male", "Female", "Other"]
-    _def_sex    = _PERSON.get("sex", "Male")
-    sex         = st.selectbox("Sex", sex_opts,
-                               index=sex_opts.index(_def_sex) if _def_sex in sex_opts else 0)
+    sex_opts = ["Male", "Female", "Other"]
+    _def_sex = _PERSON.get("sex", "Male")
+    sex      = st.selectbox("Sex", sex_opts,
+                            index=sex_opts.index(_def_sex) if _def_sex in sex_opts else 0)
 
-    _def_date   = date.fromisoformat(_BIRTH["date"]) if "date" in _BIRTH else date.today()
-    bdate       = st.date_input("Date of birth", _def_date,
-                                min_value=APP_MIN_DATE, max_value=APP_MAX_DATE)
+    _def_date = date.fromisoformat(_BIRTH["date"]) if "date" in _BIRTH else date.today()
+    bdate     = st.date_input("Date of birth", _def_date,
+                              min_value=APP_MIN_DATE, max_value=APP_MAX_DATE)
 
-    _def_time   = time.fromisoformat(_BIRTH["time"]) if "time" in _BIRTH else time(12, 0)
-    btime       = st.time_input("Time of birth", _def_time)
+    _def_time = time.fromisoformat(_BIRTH["time"]) if "time" in _BIRTH else time(12, 0)
+    btime     = st.time_input("Time of birth", _def_time)
 
     st.markdown("**Place of birth**")
     if "lat_input" not in st.session_state:
@@ -170,7 +238,7 @@ with st.sidebar:
                                  min_value=APP_MIN_DATE, max_value=APP_MAX_DATE)
     generate_chart = st.button("Generate Horoscope", type="primary", use_container_width=True)
 
-# ── Chart state ───────────────────────────────────────────────────────────────
+# ─── Chart computation ────────────────────────────────────────────────────────
 
 if generate_chart or "chart" not in st.session_state:
     dt_local = datetime.combine(bdate, btime)
@@ -182,6 +250,7 @@ chart = st.session_state.chart
 meta  = st.session_state.meta
 moon  = chart.planets["Moon"]
 
+# Summary metrics row
 hc1, hc2, hc3, hc4 = st.columns(4)
 hc1.metric("Lagna (Ascendant)", RASIS[chart.asc_rasi_index])
 hc2.metric("Rasi (Moon sign)",  moon.rasi)
@@ -192,7 +261,7 @@ st.divider()
 tdt    = datetime.combine(meta["transit_date"], time(12, 0))
 tchart = build_chart(tdt, meta["tz"], meta["lat"], meta["lon"])
 
-# ── Tabs ──────────────────────────────────────────────────────────────────────
+# ─── Tabs ─────────────────────────────────────────────────────────────────────
 
 tab_birth, tab_transit, tab_tm, tab_house, tab_extra = st.tabs([
     "📜 Birth Chart",
@@ -312,6 +381,8 @@ with tab_house:
     st.subheader(f"Your house guide · {RASIS[chart.asc_rasi_index]} Lagna")
     st.caption("All tables and charts are relative to YOUR ascendant.")
 
+    # ── What's active right now ────────────────────────────────────────────────
+
     st.markdown("#### 🔭 What's being activated right now")
     st.caption(f"Transit date: {meta['transit_date'].strftime('%d %b %Y')} "
                "· planet → sign → YOUR house → life area")
@@ -324,8 +395,84 @@ with tab_house:
         key=lambda r: int(r["Your house"].split("·")[0][1:].strip()),
     )
     st.dataframe(live_rows, hide_index=True, use_container_width=True)
-    st.divider()
 
+    # ── Dasa–Transit Confluence ────────────────────────────────────────────────
+
+    st.divider()
+    st.markdown("#### 🔗 Dasa–Transit Confluence")
+    st.caption(
+        "The most powerful timing signal is when your dasa lord also transits a house "
+        "aligned with your goal. This block connects those two signals."
+    )
+
+    periods = vimshottari_periods(moon.longitude, meta["dt"])
+    cur_maha, cur_sub, _ = current_dasa(periods, tdt)
+
+    if cur_maha:
+        for kind, lord in [("Maha-dasa", cur_maha["lord"]),
+                           ("Antardasa", cur_sub["lord"] if cur_sub else None)]:
+            if lord is None:
+                continue
+            nature = functional_nature(lord, chart.asc_rasi_index)
+            tp = tchart.planets.get(lord)
+            if tp:
+                th       = chart.house_of(tp.rasi_index)
+                house_kw = HOUSE_KEYWORDS.get(th, "")
+                retro    = " ℞" if tp.retro else ""
+                st.markdown(
+                    f"**{kind}: {lord}** &nbsp;·&nbsp; "
+                    f"<span style='background:{nature['color']}22;"
+                    f"color:{nature['color']};padding:1px 6px;"
+                    f"border-radius:4px;font-weight:600'>{nature['label']}</span>"
+                    f" for your Lagna &nbsp;→&nbsp; "
+                    f"transiting **H{th} {house_kw}** ({tp.rasi}{retro})",
+                    unsafe_allow_html=True,
+                )
+                st.caption(nature["explanation"])
+            else:
+                # Rahu/Ketu handled above; nodes always in tchart
+                st.markdown(f"**{kind}: {lord}** — not in transit table (node position varies).")
+    else:
+        st.info("Could not determine current dasa for the selected transit date.")
+
+    # ── Forward Scanner ────────────────────────────────────────────────────────
+
+    st.divider()
+    st.markdown("#### 🔮 Forward Scanner — best windows ahead")
+    st.caption(
+        "Scan forward in time to find when slow planets enter the houses that matter "
+        "for a chosen goal. Fast planets (Sun, Moon, Mercury, Venus, Mars) complete "
+        "all 12 houses in under a year and are excluded."
+    )
+
+    sc1, sc2, sc3 = st.columns([2, 2, 1])
+    goal        = sc1.selectbox("Goal", list(GOAL_HOUSES.keys()), key="scanner_goal")
+    scan_planets = sc2.multiselect("Planets to watch", SLOW_PLANETS,
+                                   default=["Jupiter", "Saturn", "Rahu"], key="scanner_planets")
+    scan_years  = sc3.selectbox("Look ahead (years)", [3, 5, 10, 15, 20], index=2, key="scanner_years")
+
+    target_h = GOAL_HOUSES[goal]
+    st.caption(f"Houses to watch for **{goal}**: " +
+               ", ".join(f"H{h} ({HOUSE_KEYWORDS.get(h,'')})" for h in target_h))
+
+    if scan_planets:
+        scan_end   = tdt + timedelta(days=scan_years * 365)
+        # 7-day step is accurate enough for slow planets (Jupiter moves ~1°/week)
+        df_scan = rows_to_frame(
+            cached_timeseries(tdt, scan_end, meta["tz"], meta["lat"], meta["lon"],
+                              tuple(scan_planets), 7)
+        )
+        scan_results = find_house_entries(df_scan, chart.asc_rasi_index, target_h)
+        if scan_results:
+            st.dataframe(pd.DataFrame(scan_results), hide_index=True, use_container_width=True)
+        else:
+            st.info(f"None of the selected planets enter those houses in the next {scan_years} years.")
+    else:
+        st.info("Pick at least one planet to scan.")
+
+    # ── House map & lordships ──────────────────────────────────────────────────
+
+    st.divider()
     cmap, clord = st.columns(2)
     with cmap:
         st.markdown("#### 🏠 Your 12 houses")
@@ -367,6 +514,8 @@ with tab_house:
     st.info("💡 When a life event happened, check which house slow planets were transiting "
             "and whether that house's ruling planet was in a Dasa/Bhukti period.")
 
+    # ── House activation chart ─────────────────────────────────────────────────
+
     st.divider()
     st.markdown("#### 📊 House activation right now")
     st.caption(f"Weighted by planetary significance · {meta['transit_date'].strftime('%d %b %Y')}")
@@ -377,6 +526,8 @@ with tab_house:
         build_house_activation_figure(house_planet_map, HOUSE_KEYWORDS),
         use_container_width=True,
     )
+
+    # ── Planet journeys ────────────────────────────────────────────────────────
 
     st.divider()
     st.markdown("#### 🪐 Planet journeys through your houses")
@@ -401,10 +552,12 @@ with tab_house:
     else:
         st.info("Pick at least one planet.")
 
+    # ── Phase wave ────────────────────────────────────────────────────────────
+
     st.divider()
     st.markdown("#### 🌊 Phase wave through your houses")
     st.caption("Sin-wave of a planet's sidereal longitude · coloured bands = house occupied at each point.")
-    wc1, wc2   = st.columns([2, 1])
+    wc1, wc2    = st.columns([2, 1])
     wave_planet = wc1.selectbox("Planet", ALL_PLANETS,
                                 index=ALL_PLANETS.index("Jupiter"), key="wave_planet")
     wave_span   = wc2.selectbox("Span (years ±)", [3, 5, 10, 20], index=1, key="wave_span")
@@ -421,10 +574,14 @@ with tab_house:
 # ── Extra Info ────────────────────────────────────────────────────────────────
 
 with tab_extra:
+
+    # ── Dasa Timeline ─────────────────────────────────────────────────────────
+
     with st.expander("🪔 Dasa Timeline", expanded=True):
-        periods = vimshottari_periods(moon.longitude, meta["dt"])
+        periods   = vimshottari_periods(moon.longitude, meta["dt"])
         cur_maha, cur_sub, subs = current_dasa(periods, tdt)
         st.subheader("Vimshottari Maha-Dasa periods")
+
         if cur_maha:
             st.success(
                 f"**Currently running:** {cur_maha['lord']} Dasa "
@@ -432,26 +589,66 @@ with tab_extra:
                 + (f"  ·  sub-period **{cur_sub['lord']}** (until {cur_sub['end'].strftime('%b %Y')})"
                    if cur_sub else "")
             )
+
+        # Build dasa table with Lagna-specific quality for each dasa lord
+        period_rows = []
+        for p in periods:
+            nat = functional_nature(p["lord"], chart.asc_rasi_index)
+            period_rows.append({
+                "Maha-Dasa": ("▶ " if p is cur_maha else "") + p["lord"],
+                "Quality for your Lagna": nat["label"],
+                "From":  p["start"].strftime("%d-%m-%Y"),
+                "To":    p["end"].strftime("%d-%m-%Y"),
+                "Years": f"{p['years']:.1f}",
+            })
+
+        df_periods = pd.DataFrame(period_rows)
+
+        def _style_dasa(row):
+            lord = row["Maha-Dasa"].replace("▶ ", "").strip()
+            bg   = _QUALITY_BG.get(functional_nature(lord, chart.asc_rasi_index)["label"], "#ffffff")
+            return [f"background-color:{bg}"] * len(row)
+
         st.dataframe(
-            [{"Maha-Dasa": ("▶ " if p is cur_maha else "") + p["lord"],
-              "From": p["start"].strftime("%d-%m-%Y"),
-              "To":   p["end"].strftime("%d-%m-%Y"),
-              "Years": f"{p['years']:.1f}"}
-             for p in periods],
+            df_periods.style.apply(_style_dasa, axis=1),
             hide_index=True, use_container_width=True,
         )
+
+        # Quality legend
+        st.caption(
+            "**Quality key:** "
+            "Yogakaraka = most powerful · Lagna Lord = auspicious · Benefic = growth-oriented · "
+            "Mixed = dual themes · Neutral = moderate · Malefic = karmic pressure · "
+            "Shadowy = Rahu/Ketu (unpredictable)"
+        )
+
         if cur_maha:
             st.markdown(f"#### Sub-periods (Bhukti) within {cur_maha['lord']} Dasa")
+            sub_rows = []
+            for s in subs:
+                nat = functional_nature(s["lord"], chart.asc_rasi_index)
+                sub_rows.append({
+                    "Sub-period": ("▶ " if (cur_sub and s["lord"] == cur_sub["lord"]
+                                            and s["start"] == cur_sub["start"]) else "")
+                                  + f"{cur_maha['lord']}–{s['lord']}",
+                    "Quality": nat["label"],
+                    "From":  s["start"].strftime("%d-%m-%Y"),
+                    "To":    s["end"].strftime("%d-%m-%Y"),
+                    "Years": f"{s['years']:.2f}",
+                })
+            df_subs = pd.DataFrame(sub_rows)
+
+            def _style_sub(row):
+                lord = row["Sub-period"].replace("▶ ", "").split("–")[-1].strip()
+                bg   = _QUALITY_BG.get(functional_nature(lord, chart.asc_rasi_index)["label"], "#ffffff")
+                return [f"background-color:{bg}"] * len(row)
+
             st.dataframe(
-                [{"Sub-period": ("▶ " if (cur_sub and s["lord"] == cur_sub["lord"]
-                                          and s["start"] == cur_sub["start"]) else "")
-                                + f"{cur_maha['lord']}–{s['lord']}",
-                  "From": s["start"].strftime("%d-%m-%Y"),
-                  "To":   s["end"].strftime("%d-%m-%Y"),
-                  "Years": f"{s['years']:.2f}"}
-                 for s in subs],
+                df_subs.style.apply(_style_sub, axis=1),
                 hide_index=True, use_container_width=True,
             )
+
+    # ── Planet Positions ───────────────────────────────────────────────────────
 
     with st.expander("📊 Planet Positions"):
         st.subheader("Nirayana (sidereal) planetary positions")
@@ -471,10 +668,12 @@ with tab_extra:
         st.dataframe(rows, hide_index=True, use_container_width=True)
         st.caption("Rahu/Ketu use mean-node positions.")
 
+    # ── Planet Motion ──────────────────────────────────────────────────────────
+
     with st.expander("📈 Planet Motion"):
         st.subheader("Planetary motion over time")
         st.caption("Sinusoidal phase + raw longitude. Diamonds mark retrograde samples.")
-        c1, c2 = st.columns([2, 1])
+        c1, c2   = st.columns([2, 1])
         sel      = c1.multiselect("Planets", ALL_PLANETS,
                                   default=["Jupiter", "Saturn", "Mars"], key="motion_planets")
         span_yrs = c2.selectbox("Span (years ±)", [3, 5, 10, 20, 30], index=1, key="motion_span")
