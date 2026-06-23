@@ -1,0 +1,14 @@
+# Copy this file to config.toml and fill in your details.
+# config.toml is gitignored — your birth data stays local.
+
+[person]
+name = "Your Name"
+sex  = "Male"        # Male / Female / Other
+
+[birth]
+date = "1990-01-01"  # YYYY-MM-DD
+time = "12:00"       # HH:MM (24-hour)
+city = "Mumbai, India"
+lat  = 19.076        # fallback if city lookup fails
+lon  = 72.877
+tz   = 5.5           # hours east of GMT  (India = 5.5, New York = -5/-4)
