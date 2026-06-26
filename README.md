@@ -2,6 +2,8 @@
 
 A astrology web app built with Streamlit. Enter a birth city and date to get a full sidereal birth chart, Vimshottari dasa timeline with Lagna-specific quality ratings, live transit (gochara) overlay, a dasa–transit confluence panel, a forward scanner for finding optimal timing windows, interactive planetary motion curves, and a personalised house guide with visualisations.
 
+![alt text](image.png)
+
 Positions are computed with the [Swiss Ephemeris](https://www.astro.com/swisseph/) using the **Lahiri (Chitra-Paksha) ayanamsa** — the standard for Indian predictive astrology.
 
 ---
