@@ -33,3 +33,6 @@ handoff/
 *.zip
 tests/fixtures_private.toml
 
+
+# Personal study data (year ratings, life events) — never committed
+study/

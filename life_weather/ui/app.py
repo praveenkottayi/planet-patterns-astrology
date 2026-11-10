@@ -7,7 +7,7 @@ import streamlit as st
 
 from life_weather.analysis.timeline import combine
 from life_weather.ui import (download, header, sidebar, state, tab_chart, tab_houses, tab_motion,
-                             tab_weather)
+                             tab_study, tab_weather)
 from life_weather.ui.state import View
 
 st.set_page_config(page_title="Life Weather", page_icon="🌦️", layout="wide")
@@ -22,8 +22,9 @@ view = View(birth, factors, end_year, node, pick, base,
 
 download.render(view)
 header.render(view)
-motion, weather, houses, chart = st.tabs(
-    ["🌀 Planets in motion", "🌦️ Life Weather", "🏠 Houses over time", "🪐 Chart & houses"])
+motion, weather, houses, chart, study = st.tabs(
+    ["🌀 Planets in motion", "🌦️ Life Weather", "🏠 Houses over time", "🪐 Chart & houses",
+     "📅 My life events"])
 with motion:
     tab_motion.render(view)
 with weather:
@@ -32,3 +33,5 @@ with houses:
     tab_houses.render(view)
 with chart:
     tab_chart.render(view)
+with study:
+    tab_study.render(view)

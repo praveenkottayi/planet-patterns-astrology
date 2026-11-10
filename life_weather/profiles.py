@@ -103,3 +103,51 @@ def example_profiles(path: Path = EXAMPLES) -> list[Profile]:
 def load_profiles() -> list[Profile]:
     """Your people first, then the public examples."""
     return private_profiles() + example_profiles()
+
+
+# ─── Saving people you enter in the app ───────────────────────────────────────
+
+READ_ONLY_FLAG = "LW_READ_ONLY"      # set to 1 on a hosted copy so visitors' details are never stored
+
+
+def saving_allowed() -> bool:
+    return os.environ.get(READ_ONLY_FLAG, "").strip() not in ("1", "true", "yes")
+
+
+def format_env_profile(birth: Birth) -> str:
+    """Birth → 'Name | YYYY-MM-DD HH:MM | City | lat | lon | tz' (the .env line format)."""
+    def clean(text: str) -> str:
+        return text.replace("|", "/").replace('"', "'").strip()
+    return (f"{clean(birth.name)} | {birth.when_local:%Y-%m-%d %H:%M} | "
+            f"{clean(birth.place) or 'unknown'} | {birth.lat:.4f} | {birth.lon:.4f} | "
+            f"{birth.tz_hours:g}")
+
+
+def save_profile(birth: Birth, path: Path = ENV_FILE) -> tuple[str, bool]:
+    """Add the person to .env, or update their line if the name already exists.
+    Returns (variable name, updated?). Other lines and comments are kept as they are."""
+    lines = path.read_text().splitlines() if path.exists() else [
+        "# PRIVATE — gitignored. Your own people for the Life Weather app (local only).",
+        "# Format: Name | YYYY-MM-DD HH:MM (local birth time) | City | lat | lon | UTC offset"]
+    value = format_env_profile(birth)
+    name = value.split("|")[0].strip().lower()
+    numbers = []
+    for i, line in enumerate(lines):
+        stripped = line.strip().removeprefix("export ")
+        if not stripped.startswith(ENV_PREFIX) or "=" not in stripped:
+            continue
+        key, existing = stripped.split("=", 1)
+        numbers.append(int(re.sub(r"\D", "", key) or 0))
+        if existing.strip().strip("'\"").split("|")[0].strip().lower() == name:
+            lines[i] = f'{key.strip()}="{value}"'
+            _write(path, lines)
+            return key.strip(), True
+    key = f"{ENV_PREFIX}{max(numbers, default=0) + 1}"
+    lines.append(f'{key}="{value}"')
+    _write(path, lines)
+    return key, False
+
+
+def _write(path: Path, lines: list[str]) -> None:
+    path.write_text("\n".join(lines) + "\n")
+    path.chmod(0o600)

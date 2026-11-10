@@ -14,6 +14,7 @@ point carries its reason. No weights are tuned to fit anyone's life story.
 | 🏠 **Houses over time** | The same green/red view for each house H1–H12 (Self, Wealth, … Career, Income, Expenses), counted from Lagna or Moon. |
 | 🌀 **Planets in motion** (first tab) | Transit + motion: the Gochara chart with the selected planets overlaid and their positions on the chosen date; a **phase motion** graph, sin(sidereal longitude), over a ± window (up to 30 years) — one wave per orbit, retrograde diamonds, ★ at the chosen date, 6m/1y/5y/All zoom and a range slider — with a "how to read this chart" guide; an exact **events** list (sign changes, retrograde/direct turns, passes over birth points, to the minute); and the planets at birth. |
 | 🪐 **Chart & houses** | South-Indian chart with birth planets and transits on the chosen date, a reading guide, a plain-language "explain one house", and a table of every house's sign, ruler, birth planets and current transits. |
+| 📅 **My life events** (your own profile only) | List events you can date (good or hard, by life area). Each one is set against the chart: the Life Weather reading, the Maha-dasa / sub-period (and whether one had just begun), where Saturn, Jupiter, Rahu and Ketu were from your Lagna and Moon, and named conditions — Sade Sati and its phase, Ashtama Shani, Saturn or Jupiter in your Lagna, Jupiter over your Moon, nodes across your Lagna or Moon, slow planets passing over your birth points. A **recurring themes** table shows which dasas and conditions keep appearing around good vs hard events. Optional: rate your years and run a blind check against 500 random charts. Everything stays in the local, gitignored `study/` folder. |
 
 The sidebar picks the person (saved profile or a new one by **birth city**), which factors count
 in the overall line, Rahu/Ketu node type, and the **date for details** that drives the "why"
@@ -47,6 +48,10 @@ Copy `.env.example` to `.env` and add one line per person:
 LW_PROFILE_1="Name | 1990-01-01 12:00 | Chennai"
 LW_PROFILE_2="Name | 1985-05-05 05:05 | Ottapalam | 10.77 | 76.38 | 5.5"   # lat | lon | UTC offset
 ```
+
+Or simply enter a person under **➕ New person…** and click **💾 Save to my profiles** — they are
+added to `.env` (saving the same name again updates them). On a hosted copy, set
+`LW_READ_ONLY=1` so visitors' details are never stored on the server.
 
 Everyone also sees **public examples** (Sachin Tendulkar, Narendra Modi) from
 `life_weather/examples.toml`, each with a note on how reliable its published birth time is.
@@ -86,6 +91,11 @@ The few that are our own choices (not classical) are labelled there.
 
 Real birth-data fixtures live in `tests/fixtures_private.toml` (gitignored); those tests skip
 when it is absent.
+
+A spot-check against AstroSage's published charts for Narendra Modi and Sachin Tendulkar (same
+birth data) agrees on every position within ~1 arc-minute. On their documented life events,
+however, the good/bad timeline did no better than chance — the My life events tab lets you look at
+that question on your own life.
 
 ## Layout
 

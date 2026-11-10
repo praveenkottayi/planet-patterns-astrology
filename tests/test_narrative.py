@@ -51,3 +51,36 @@ def test_key_stretches_threshold_length_and_merge():
     assert 0.8 < st[0].mean < 1.0                    # the merged span includes the neutral gap
     assert st[0].start == datetime(2000, 1, 1).date()
     assert st[0].end == (pd.Timestamp("2000-01-01") + pd.Timedelta(days=5 * 67)).date()
+
+
+# ─── Key facts ────────────────────────────────────────────────────────────────
+
+def _chart_at(when: datetime):
+    return natal_chart(Birth("t", when, 5.5, 13.08, 80.27))
+
+
+def test_tithi_on_known_full_and_new_moons():
+    from life_weather.analysis.narrative import tithi
+    assert tithi(_chart_at(datetime(2024, 4, 23, 12))) == "Pournami (full moon)"    # Chaitra Purnima
+    assert tithi(_chart_at(datetime(2024, 11, 1, 12))) == "Amavasya (new moon)"     # Diwali
+    assert tithi(_chart_at(datetime(2024, 4, 27, 12))).startswith("Krishna")         # waning after
+
+
+def test_key_facts_are_consistent_with_the_chart():
+    from datetime import timedelta
+
+    from life_weather.analysis.narrative import key_facts
+    from life_weather.analysis.timeline import build
+    b = Birth("t", datetime(1995, 4, 2, 9, 15), 5.5, 13.08, 80.27)
+    lw = build(b, end_year=2000)
+    facts = dict(key_facts(lw))
+    assert list(facts) == ["Lagna", "Rasi (Moon sign)", "Naal (birth star)", "Sun sign", "Tithi",
+                           "Dasa balance at birth"]
+    nak, pada = lw.chart.nakshatra("Moon")
+    assert facts["Naal (birth star)"].startswith(f"{nak}, pada {pada} (")
+    # On 2 April the Sun is ~12° tropical Aries, i.e. ~18° sidereal Pisces (Meenam).
+    assert facts["Sun sign"] == "Meenam (Pisces) · Western (tropical): Aries"
+    lord, y, _, m, _, d, _ = facts["Dasa balance at birth"].split()
+    first = next(md for md in lw.maha_dasas if md.end_jd > lw.chart.jd)
+    left = timedelta(days=int(y) * 365.25 + int(m) * 30.4375 + int(d))
+    assert lord == first.md and abs((b.when_local + left).date() - first.end).days <= 1

@@ -38,7 +38,7 @@ def test_pdf_has_every_written_section():
     import pypdf
     assert 5 <= len(pypdf.PdfReader(io.BytesIO(data)).pages) <= 12
     text = _text(data)
-    for heading in ("Life Weather · Test Person", "At a glance", "Birth chart",
+    for heading in ("Life Weather · Test Person", "Key facts", "Naal (birth star)", "Tithi", "At a glance", "Birth chart",
                     "What each planet stands for here", "How to read this chart", "The chart is a fixed map of the sky", "Planets in motion",
                     "Life Weather timeline", "Key stretches", "Houses over time", "Dasa timeline",
                     "Glossary", "Please note", "All rights reserved", "Contact: praveenkottayi@gmail.com", "Chennai, India"):

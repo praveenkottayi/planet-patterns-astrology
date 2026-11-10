@@ -20,7 +20,18 @@ NAKSHATRAS = [
     "Moolam", "Pooradam", "Uthradam", "Thiruvonam", "Avittam", "Chathayam",
     "Pooruruttathi", "Uthrattathi", "Revathi",
 ]
+NAKSHATRAS_SA = [   # Sanskrit names, same order — for horoscopes written outside Kerala
+    "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra",
+    "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni",
+    "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha",
+    "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha",
+    "Purva Bhadrapada", "Uttara Bhadrapada", "Revati",
+]
 NAK_SPAN = 360 / 27
+
+# Lunar day: every 12° the Moon gains on the Sun. 1–14 in each half, then Pournami / Amavasya.
+TITHIS = ["Prathama", "Dwitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi", "Saptami",
+          "Ashtami", "Navami", "Dashami", "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi"]
 
 # ─── Planets ──────────────────────────────────────────────────────────────────
 

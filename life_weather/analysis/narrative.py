@@ -13,7 +13,8 @@ from datetime import date
 import pandas as pd
 
 from ..core.chart import Chart
-from ..core.constants import SIGN_LORD
+from ..core.constants import (NAK_SPAN, NAKSHATRAS_SA, SIGN_LORD, SIGNS_EN, SIGNS_ML,
+                              TITHIS)
 from ..core.dignity import dignity, neecha_bhanga
 from .dasa_weight import PlanetWeight, ruled_houses
 from .houses import HOUSE_AREAS
@@ -225,4 +226,48 @@ def chart_guide(name: str, lagna: str, moon: str, when: str,
          ["A house is affected by three things: planets born in it, its ruler (the planet that "
           "owns its sign) and how strong that ruler is, and planets passing through it now. "
           "An empty house is normal — its ruler speaks for it."]),
+    ]
+
+
+# ─── Key facts to check against a horoscope ───────────────────────────────────
+
+def tithi(chart: Chart) -> str:
+    """Lunar day from the Moon's lead over the Sun: 'Shukla Panchami', 'Pournami', …"""
+    i = int(((chart.longitudes["Moon"] - chart.longitudes["Sun"]) % 360) // 12)   # 0–29
+    if i == 14:
+        return "Pournami (full moon)"
+    if i == 29:
+        return "Amavasya (new moon)"
+    return f"{'Shukla' if i < 15 else 'Krishna'} {TITHIS[i % 15]}"
+
+
+def dasa_balance(lw: LifeWeather) -> str:
+    """Maha-dasa running at birth and how much of it was left, e.g. 'Saturn 6 y 10 m 23 d'."""
+    birth_jd = lw.chart.jd
+    first = next(md for md in lw.maha_dasas if md.end_jd > birth_jd)
+    days = first.end_jd - birth_jd
+    years = int(days // 365.25)
+    days -= years * 365.25
+    months = int(days // 30.4375)
+    days = round(days - months * 30.4375)
+    return f"{first.md} {years} y {months} m {days} d"
+
+
+def key_facts(lw: LifeWeather) -> list[tuple[str, str]]:
+    """(label, value) pairs a person can check against their own horoscope."""
+    c = lw.chart
+    nak, pada = c.nakshatra("Moon")
+    nak_i = int(c.longitudes["Moon"] // NAK_SPAN)
+    western_sun = int(((c.longitudes["Sun"] + c.ayanamsa) % 360) // 30)   # tropical = sidereal + ayanamsa
+
+    def sign(body: str) -> str:
+        return f"{SIGNS_ML[c.sign(body)]} ({SIGNS_EN[c.sign(body)]})"
+
+    return [
+        ("Lagna", f"{sign('Lagna')} {c.deg_in_sign('Lagna'):.1f}°"),
+        ("Rasi (Moon sign)", sign("Moon")),
+        ("Naal (birth star)", f"{nak}, pada {pada} ({NAKSHATRAS_SA[nak_i]})"),
+        ("Sun sign", f"{sign('Sun')} · Western (tropical): {SIGNS_EN[western_sun]}"),
+        ("Tithi", tithi(c)),
+        ("Dasa balance at birth", dasa_balance(lw)),
     ]

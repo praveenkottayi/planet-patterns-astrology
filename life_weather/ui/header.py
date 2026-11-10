@@ -4,7 +4,8 @@ from __future__ import annotations
 import streamlit as st
 
 from ..analysis.dasa_weight import dasa_scale
-from ..core.constants import SIGNS_EN, SIGNS_ML
+from ..analysis.narrative import key_facts
+from ..core.constants import SIGNS_ML
 from ..viz.figure import LANE_TITLES
 from . import state
 from .state import View
@@ -21,15 +22,28 @@ def _minutes(m: int | None) -> str:
     return f"{m} min" if m is not None else "more than 4 h"
 
 
+def _key_facts(v: View) -> None:
+    """The basics a person can check against their own horoscope before reading further."""
+    b = v.birth
+    where = f" · {b.place}" if b.place else ""
+    with st.container(border=True):
+        st.markdown(f"**Key facts — check these against your horoscope**  \n"
+                    f"<small>Born {b.when_local:%d %b %Y, %H:%M}{where}</small>",
+                    unsafe_allow_html=True)
+        facts = key_facts(v.lw)
+        for row in (facts[:3], facts[3:]):
+            for col, (label, value) in zip(st.columns(3), row):
+                col.caption(label)
+                col.markdown(f"**{value}**")
+
+
 def render(v: View) -> None:
-    chart = v.lw.chart
-    nak, pada = chart.nakshatra("Moon")
-    lagna, moon = chart.sign("Lagna"), chart.sign("Moon")
+    lagna = v.lw.chart.sign("Lagna")
 
     st.title(f"Life Weather · {v.birth.name}")
+    _key_facts(v)
     st.caption(
-        f"Lagna **{SIGNS_ML[lagna]}** ({SIGNS_EN[lagna]}) · Moon **{SIGNS_ML[moon]}** "
-        f"({SIGNS_EN[moon]}), {nak}-{pada} · Lahiri, {v.node} node · transits from the Moon · "
+        f"Method: Lahiri ayanamsa, {v.node} node · transits from the Moon · "
         f"dasa on a fixed scale (÷{dasa_scale():g}) · overall = {_formula(v.factors)}, "
         f"3-month average"
     )

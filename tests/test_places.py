@@ -60,3 +60,44 @@ def test_examples_ship_with_notes():
     examples = example_profiles()
     assert {p.birth.name for p in examples} >= {"Sachin Tendulkar", "Narendra Modi"}
     assert all(p.example and p.note and p.label.endswith("· example") for p in examples)
+
+
+# ─── Saving people entered in the app ─────────────────────────────────────────
+
+def _person(name="Asha", hour=6):
+    from life_weather.core.chart import Birth
+    return Birth(name, datetime(2001, 3, 4, hour, 30), 5.5, 9.9312, 76.2673, "Kochi, India")
+
+
+def test_save_appends_then_updates_same_name(tmp_path):
+    from life_weather.profiles import save_profile
+    env = tmp_path / ".env"
+    env.write_text('# my comment\nOTHER=keep\nLW_PROFILE_7="Old | 1990-01-01 00:00 | Pune"\n')
+    assert save_profile(_person(), env) == ("LW_PROFILE_8", False)          # next number
+    assert save_profile(_person(hour=7), env) == ("LW_PROFILE_8", True)      # same name → update
+    text = env.read_text()
+    assert "# my comment" in text and "OTHER=keep" in text and text.count("Asha") == 1
+    assert oct(env.stat().st_mode)[-3:] == "600"
+    people = {p.birth.name: p.birth for p in private_profiles(read_env_file(env))}
+    assert set(people) == {"Old", "Asha"}
+    a = people["Asha"]
+    assert (a.when_local.hour, a.lat, a.lon, a.tz_hours, a.place) == (7, 9.9312, 76.2673, 5.5,
+                                                                       "Kochi, India")
+
+
+def test_save_creates_env_and_sanitises(tmp_path):
+    from life_weather.profiles import format_env_profile, save_profile
+    env = tmp_path / ".env"
+    key, updated = save_profile(_person(name='A | "B"'), env)
+    assert (key, updated) == ("LW_PROFILE_1", False) and env.read_text().startswith("# PRIVATE")
+    assert "|" not in format_env_profile(_person(name="A|B")).split(" | ")[0]
+    (p,) = private_profiles(read_env_file(env))
+    assert p.birth.name == "A / 'B'"
+
+
+def test_read_only_flag_blocks_saving(monkeypatch):
+    from life_weather.profiles import saving_allowed
+    monkeypatch.setenv("LW_READ_ONLY", "1")
+    assert not saving_allowed()
+    monkeypatch.delenv("LW_READ_ONLY")
+    assert saving_allowed()

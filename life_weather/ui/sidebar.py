@@ -7,7 +7,7 @@ import streamlit as st
 
 from ..core.chart import Birth
 from ..places import search_cities, uses_local_mean_time, utc_offset_hours
-from ..profiles import load_profiles
+from ..profiles import load_profiles, save_profile, saving_allowed
 from ..viz.figure import LANE_TITLES
 
 NEW = "➕ New person…"
@@ -57,18 +57,41 @@ def _new_person() -> Birth:
             st.caption(f"UTC offset on that date: **{tz:+g} h** ({place.tz_name}) — "
                        f"includes daylight saving and historical changes.")
         return Birth(name, when, tz, place.lat, place.lon, f"{place.name}, {place.country}")
-    return Birth(name, when, tz_manual, lat, lon)
+    return Birth(name, when, tz_manual, lat, lon, query.strip())
+
+
+def _save_button(birth: Birth) -> None:
+    """Save the person being entered into the local .env, then switch to them."""
+    if not saving_allowed():
+        return
+    if not birth.name.strip() or birth.name.strip() == "New person":
+        st.caption("Give the person a name to save them to your profiles.")
+        return
+    if st.button("💾 Save to my profiles", use_container_width=True,
+                 help="Adds this person to your local .env (never committed). "
+                      "Saving the same name again updates their details."):
+        key, updated = save_profile(birth)
+        st.session_state["select_profile"] = birth.name.strip()
+        st.session_state["saved_note"] = (f"{'Updated' if updated else 'Saved'} "
+                                          f"{birth.name.strip()} ({key}) in .env")
+        st.rerun()
 
 
 def person_and_options() -> tuple[Birth, tuple[str, ...], int, str]:
     profiles = load_profiles()
     with st.sidebar:
         st.header("Person")
-        choice = st.selectbox("Profile", [p.label for p in profiles] + [NEW],
+        options = [p.label for p in profiles] + [NEW]
+        wanted = st.session_state.pop("select_profile", None)     # just saved → select them
+        choice = st.selectbox("Profile", options,
+                              index=options.index(wanted) if wanted in options else 0,
                               help="Your own people come from the local .env file (never "
                                    "committed); '· example' entries are public figures.")
+        if note := st.session_state.pop("saved_note", None):
+            st.success(note)
         if choice == NEW:
             birth = _new_person()
+            _save_button(birth)
         else:
             profile = next(p for p in profiles if p.label == choice)
             birth = profile.birth

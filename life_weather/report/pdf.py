@@ -25,11 +25,12 @@ from ..analysis.dasa_weight import dasa_scale
 from ..analysis.houses import house_table
 from ..analysis.motion import events
 from ..analysis.narrative import (GLOSSARY, chart_guide, dasa_sentence, house_highlights,
-                                  house_label, house_reason, key_stretches, planet_role, tone)
+                                  house_label, house_reason, key_facts, key_stretches,
+                                  planet_role, tone)
 from ..analysis.sensitivity import BirthTimeSensitivity
 from ..analysis.timeline import LifeWeather, score_of
 from ..core.chart import Birth, retrograde, sidereal_longitudes, to_jd
-from ..core.constants import GRAHAS, NODES, SIGNS_EN, SIGNS_ML
+from ..core.constants import GRAHAS, NODES, SIGNS_ML
 from ..core.dasa import period_at
 from ..core.dignity import dignity, neecha_bhanga
 from ..viz.figure import LANE_TITLES
@@ -198,7 +199,6 @@ def build_pdf(birth: Birth, lw: LifeWeather, factors: tuple[str, ...], node: str
               houses_from_lagna: pd.DataFrame, sens: BirthTimeSensitivity) -> bytes:
     chart = lw.chart
     lagna, moon = chart.sign("Lagna"), chart.sign("Moon")
-    nak, pada = chart.nakshatra("Moon")
     when = f"{pick:%d %b %Y}"
     jd = to_jd(datetime.combine(pick, time(12)), birth.tz_hours)
     transit, retro_now = sidereal_longitudes(jd, node), retrograde(jd)
@@ -219,20 +219,21 @@ def build_pdf(birth: Birth, lw: LifeWeather, factors: tuple[str, ...], node: str
     # ── 1. At a glance ──────────────────────────────────────────────────────
     pdf.add_page()
     pdf.h1(f"Life Weather · {birth.name}", f"Report for {when}")
-    pdf.para(INTRO)
     place = birth.place or "—"
+    pdf.h2("Key facts — check these against your horoscope first")
     pdf.kv([
         ("Born", f"{birth.when_local:%d %b %Y, %H:%M} local ({_hours(birth.tz_hours)})"),
         ("Place", f"{place}  ({abs(birth.lat):.2f}°{'N' if birth.lat >= 0 else 'S'}, "
                   f"{abs(birth.lon):.2f}°{'E' if birth.lon >= 0 else 'W'})"),
-        ("Lagna (ascendant)", f"{SIGNS_ML[lagna]} ({SIGNS_EN[lagna]}) "
-                              f"{chart.deg_in_sign('Lagna'):.1f}°"),
-        ("Moon", f"{SIGNS_ML[moon]} ({SIGNS_EN[moon]}), nakshatra {nak} pada {pada}"),
+        *key_facts(lw),
         ("Birth-time check", f"The Lagna holds only if the birth time is right to within "
                              f"{_minutes(sens.lagna_earlier)} earlier / "
                              f"{_minutes(sens.lagna_later)} later; dasa dates move about "
                              f"{sens.dasa_days_per_10min} days per 10 minutes of error."),
     ])
+    pdf.para("If any of these differ from your horoscope, check the birth time and place before "
+             "reading further — everything below depends on them.", size=8.3)
+    pdf.para(INTRO)
 
     pdf.h2(f"At a glance — {when}")
     pdf.callout(f"Overall: {tone(overall)} ({overall:+.2f}, 3-month average; this date "
