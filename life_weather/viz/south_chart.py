@@ -45,23 +45,25 @@ class Cell:
         return LAGNA_FILL if self.is_lagna else MOON_FILL if self.is_moon else PLAIN_FILL
 
 
-def chart_cells(chart: Chart, transit_lons: dict[str, float],
+def chart_cells(chart: Chart, transit_lons: dict[str, float] | None,
                 retro: dict[str, bool]) -> list[Cell]:
+    """transit_lons=None draws the birth chart alone; a partial dict overlays only those planets."""
     lagna, moon = chart.sign("Lagna"), chart.sign("Moon")
     natal: dict[int, list[str]] = {s: [] for s in range(12)}
     for b in BODIES:
         natal[chart.sign(b)].append(f"{ABBR[b]} {chart.deg_in_sign(b):.0f}°")
     natal[lagna].insert(0, f"Asc {chart.deg_in_sign('Lagna'):.0f}°")
     now: dict[int, list[tuple[str, str]]] = {s: [] for s in range(12)}
-    for b in BODIES:
+    for b in (b for b in BODIES if transit_lons and b in transit_lons):
         now[sign_of(transit_lons[b])].append((b, ABBR[b] + ("℞" if retro.get(b) else "")))
     return [Cell(sign, r, c, house_between(sign, lagna), house_between(sign, moon),
                  tuple(natal[sign]), tuple(now[sign]), sign == lagna, sign == moon)
             for sign, (r, c) in GRID.items()]
 
 
-def render_south_chart(chart: Chart, transit_lons: dict[str, float], retro: dict[str, bool],
-                       title: str, subtitle: str, cell: int = 120) -> str:
+def render_south_chart(chart: Chart, transit_lons: dict[str, float] | None,
+                       retro: dict[str, bool], title: str, subtitle: str, cell: int = 120,
+                       legend: bool = True) -> str:
     size = cell * 4
     parts = [f'<svg viewBox="0 0 {size} {size}" xmlns="http://www.w3.org/2000/svg" '
              f'style="max-width:{size}px;width:100%;font-family:system-ui,sans-serif">',
@@ -98,7 +100,7 @@ def render_south_chart(chart: Chart, transit_lons: dict[str, float], retro: dict
                  f'text-anchor="middle" fill="#0f172a">{escape(title)}</text>')
     parts.append(f'<text x="{2 * m}" y="{1.75 * m + 22}" font-size="12" text-anchor="middle" '
                  f'fill="#475569">{escape(subtitle)}</text>')
-    for i, (sym, col, text) in enumerate(LEGEND):
+    for i, (sym, col, text) in enumerate(LEGEND if legend else []):
         ly = 2.25 * m + i * 16
         parts.append(f'<text x="{1.25 * m}" y="{ly}" font-size="10.5" font-weight="700" '
                      f'fill="{col}">{escape(sym)}</text><text x="{1.25 * m + 38}" y="{ly}" '

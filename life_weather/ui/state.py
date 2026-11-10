@@ -8,9 +8,10 @@ import pandas as pd
 import streamlit as st
 
 from ..analysis.house_timeline import house_timeline
+from ..analysis.motion import events, series
 from ..analysis.sensitivity import BirthTimeSensitivity, birth_time_sensitivity
 from ..analysis.timeline import LifeWeather, build, combine
-from ..core.chart import Birth
+from ..core.chart import Birth, natal_chart
 from ..report.pdf import build_pdf
 
 
@@ -78,3 +79,15 @@ def pdf_key(v: View) -> tuple:
 
 def pdf(v: View) -> bytes:
     return _pdf(*pdf_key(v))
+
+
+@st.cache_data(show_spinner="Tracing planets…")
+def _motion(name, when, tz, lat, lon, node, start, end, bodies):
+    chart = natal_chart(Birth(name, when, tz, lat, lon), node)
+    return (series(start, end, tz, list(bodies), node),
+            events(chart, start, end, tz, [b for b in bodies if b != "Moon"], node))
+
+
+def motion(birth: Birth, node: str, start: datetime, end: datetime, bodies: tuple[str, ...]):
+    """(position series, exact events) for the window — see analysis/motion.py."""
+    return _motion(*_key(birth), node, start, end, bodies)

@@ -31,16 +31,18 @@ def _text(pdf: bytes) -> str:
     return "".join(page.extract_text() for page in pypdf.PdfReader(io.BytesIO(pdf)).pages)
 
 
-def test_pdf_is_four_pages_with_key_sections():
+def test_pdf_has_every_written_section():
     data = _pdf(_birth(datetime(1995, 4, 2, 9, 15)))
     import io
 
     import pypdf
-    assert len(pypdf.PdfReader(io.BytesIO(data)).pages) == 4
+    assert 5 <= len(pypdf.PdfReader(io.BytesIO(data)).pages) <= 12
     text = _text(data)
-    for heading in ("Life Weather · Test Person", "Life Weather timeline", "Houses over time",
-                    "Dasa timeline", "Please note", "Chennai, India"):
-        assert heading in text
+    for heading in ("Life Weather · Test Person", "At a glance", "Birth chart",
+                    "What each planet stands for here", "How to read this chart", "The chart is a fixed map of the sky", "Planets in motion",
+                    "Life Weather timeline", "Key stretches", "Houses over time", "Dasa timeline",
+                    "Glossary", "Please note", "All rights reserved", "Contact: praveenkottayi@gmail.com", "Chennai, India"):
+        assert heading in text, heading
 
 
 def test_pdf_for_newborn():

@@ -105,7 +105,7 @@ def houses_png(lw: LifeWeather, hdf: pd.DataFrame, ref: str, marker: date | None
     return _png(fig)
 
 
-def south_chart_png(cells: list[Cell], title: str, subtitle: str) -> bytes:
+def south_chart_png(cells: list[Cell], title: str, subtitle: str, legend: bool = True) -> bytes:
     fig, ax = plt.subplots(figsize=(5.2, 5.2))
     ax.set_xlim(0, 4)
     ax.set_ylim(4, 0)
@@ -128,7 +128,8 @@ def south_chart_png(cells: list[Cell], title: str, subtitle: str) -> bytes:
     ax.add_patch(plt.Rectangle((0, 0), 4, 4, fill=False, edgecolor="#94a3b8", lw=1.5))
     ax.text(2, 1.7, title, fontsize=11, weight="bold", ha="center")
     ax.text(2, 1.92, subtitle, fontsize=8, color="#475569", ha="center")
-    for i, (sym, col, text) in enumerate(LEGEND):
+    for i, (sym, col, text) in enumerate(LEGEND if legend else []):
         ax.text(1.25, 2.25 + i * .14, sym, fontsize=7, weight="bold", color=col)
         ax.text(1.6, 2.25 + i * .14, text, fontsize=7, color="#475569")
     return _png(fig)
+

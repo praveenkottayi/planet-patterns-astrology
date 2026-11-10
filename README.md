@@ -12,15 +12,19 @@ point carries its reason. No weights are tuned to fit anyone's life story.
 |---|---|
 | 🌦️ **Life Weather** | One green/red line from birth to the chosen year (green = supportive, red = challenging), with four lanes explaining it: **Dasa**, **Jupiter**, **Saturn**, **Rahu/Ketu**. Maha-dasa starts as dashed lines; hover any point for the reasons. A "Why" panel lists them for the chosen date. |
 | 🏠 **Houses over time** | The same green/red view for each house H1–H12 (Self, Wealth, … Career, Income, Expenses), counted from Lagna or Moon. |
+| 🌀 **Planets in motion** (first tab) | Transit + motion: the Gochara chart with the selected planets overlaid and their positions on the chosen date; a **phase motion** graph, sin(sidereal longitude), over a ± window (up to 30 years) — one wave per orbit, retrograde diamonds, ★ at the chosen date, 6m/1y/5y/All zoom and a range slider — with a "how to read this chart" guide; an exact **events** list (sign changes, retrograde/direct turns, passes over birth points, to the minute); and the planets at birth. |
 | 🪐 **Chart & houses** | South-Indian chart with birth planets and transits on the chosen date, a reading guide, a plain-language "explain one house", and a table of every house's sign, ruler, birth planets and current transits. |
 
 The sidebar picks the person (saved profile or a new one by **birth city**), which factors count
 in the overall line, Rahu/Ketu node type, and the **date for details** that drives the "why"
 panel, the transit chart and the purple marker line.
 
-**Download a PDF summary** from the sidebar ("Prepare PDF summary", then "Download PDF"): four
-pages — birth details and the chosen date's dasa, score, reasons and chart; the Life Weather
-timeline; houses over time with the house table; the dasa timeline, the model and a disclaimer.
+**Download a PDF report** from the sidebar ("Prepare PDF summary", then "Download PDF"). It is
+written out in plain language: the chosen date at a glance (current dasa and what its lords mean
+for this chart, why the line sits where it does, the most supported and most pressured life
+areas, the next slow-planet changes); the birth chart with a sentence per planet; planets in
+motion with the exact events ahead; the Life Weather timeline with every key supportive or
+challenging stretch and its causes; houses; dasa periods; the method and a glossary.
 
 Birth dates from **1800 up to today** (newborns included). Before standard time was adopted,
 the birthplace's own local mean time is used (longitude ÷ 15), not the tz database's

@@ -29,6 +29,8 @@ on `main` until `v2` is merged to replace it.
 - ☑ Refactor: v1 removed, installable package, UI split per tab.
 - ☑ Birth dates 1800 → today (newborns); birthplace local mean time before standard time.
 - ☑ PDF summary download (4 pages).
+- ☑ Planets in motion tab: birth chart + table, motion graph with house bands, exact events
+  (ingress / station / contact, verified against astropy to the minute).
 - ☑ Your people from local `.env`; public examples (Tendulkar, Modi) with birth-time reliability notes.
 - ☑ Privacy pass: tests use anonymous ids; chart-specific values only in the private fixture.
 
@@ -36,7 +38,6 @@ on `main` until `v2` is merged to replace it.
 
 - ☐ Aspect highlight on the chart (pick a house → arrows from planets aspecting it)
 - ☐ Rate past years → honest check whether the model beats chance (`tune.py` idea)
-- ☐ Exact ingress list / "next changes" card (v1's forward scanner, done accurately)
 - ☐ Dasa timeline table (MD/AD list with dates)
 - ☐ Fast-planet monthly strip (Sun, Mars, Moon from Moon; Chandrashtama)
 - ☐ Settle Moon/Venus Ashtakavarga rows against a third source

@@ -13,7 +13,9 @@ def render(v: View) -> None:
         st.header("Download")
         key = state.pdf_key(v)
         if st.button("Prepare PDF summary", use_container_width=True,
-                     help="4 pages: summary and chart, Life Weather, houses, dasa timeline."):
+                     help="A written report: the chosen date at a glance, birth chart with every planet "
+                          "explained, planets in motion and the events ahead, the Life Weather "
+                          "timeline with its key stretches, houses, dasa periods, and a glossary."):
             st.session_state["pdf"] = (key, state.pdf(v))
         saved = st.session_state.get("pdf")
         if saved and saved[0] == key:

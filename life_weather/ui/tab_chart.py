@@ -7,35 +7,20 @@ import pandas as pd
 import streamlit as st
 
 from ..analysis.houses import describe_house, house_table
+from ..analysis.narrative import chart_guide
 from ..core.chart import house_between, retrograde, sidereal_longitudes, sign_of, to_jd
 from ..core.constants import SIGNS_ML
 from ..core.dasa import period_at
 from ..viz.south_chart import render_south_chart
 from .state import View
 
-GUIDE = """
-**The chart is a fixed map of the sky, not of houses.**
-Each of the 12 boxes is always the same sign (Medam is always 2nd box on top, then the signs run
-clockwise). What changes from person to person is *which house* each sign becomes.
-
-**1. Find the Lagna (yellow box, diagonal mark).** That sign is **H1** for {name} —
-here {lagna}. Count clockwise from it: the next box is H2, and so on. The **H** number in
-each box's corner does this counting for you.
-
-**2. Read the two numbers in each corner.**
-- **H10** (black) = house counted from the Lagna — the usual "house" in a birth chart.
-- **☾2** (blue) = house counted from the Moon (blue box, {moon}). Classical transit
-  reading (gochara) counts from the Moon, and that's what the Life Weather tab scores.
-
-**3. Two kinds of planets in each box.**
-- **Dark text with degrees** (e.g. *Ju 12°*) = where the planet was **at birth**. Never changes.
-- **Coloured tag** (e.g. a brown **Ju**) = where the planet is **on {when}**. Change the
-  date in the sidebar to move them. **℞** = retrograde (moving backwards).
-
-**4. Each house is a life area** (table below). A house is affected by three things: planets
-born in it, its **ruler** (the planet that owns its sign) and how strong that ruler is, and
-planets **passing through** it now. An empty house is normal — its ruler speaks for it.
-"""
+def _guide_markdown(name: str, lagna: str, moon: str, when: str) -> str:
+    parts = []
+    for heading, points in chart_guide(name, lagna, moon, when, in_app=True):
+        parts.append(f"**{heading}**")
+        parts += [p if len(points) == 1 else f"- {p}" for p in points]
+        parts.append("")
+    return "\n".join(parts)
 
 
 def _tag(bodies, flags=None) -> str:
@@ -52,8 +37,7 @@ def render(v: View) -> None:
     rows = house_table(chart, lw.weights, transit)
 
     with st.expander("📖 How to read this tab", expanded=True):
-        st.markdown(GUIDE.format(name=v.birth.name, lagna=SIGNS_ML[lagna], moon=SIGNS_ML[moon],
-                                 when=when))
+        st.markdown(_guide_markdown(v.birth.name, SIGNS_ML[lagna], SIGNS_ML[moon], when))
 
     left, right = st.columns([5, 4])
     with left:
