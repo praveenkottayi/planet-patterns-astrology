@@ -1,0 +1,17 @@
+# Public example profiles — well-known people with published birth data.
+# Times come from public astrology databases; how reliable each is goes in `note`
+# (Rodden ratings from Astro-Databank: AA/A good … DD disputed).
+
+[[person]]
+name = "Sachin Tendulkar"
+place = "Mumbai"
+when = 1973-04-24T13:00:00
+tz = 5.5
+note = "Birth time 13:00 IST from the delivering doctor's recollection (Astro-Databank rating A). 14:25 is also in circulation."
+
+[[person]]
+name = "Narendra Modi"
+place = "Vadnagar"
+when = 1950-09-17T11:00:00
+tz = 5.5
+note = "Birth time disputed (Astro-Databank rating DD): 11:00 IST is the most cited; 9:35 and 12:09 are also in circulation. Date and place are well established."

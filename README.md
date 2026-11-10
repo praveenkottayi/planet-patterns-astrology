@@ -1,251 +1,100 @@
-# Planet in Motion
+# Life Weather
 
-A astrology web app built with Streamlit. Enter a birth city and date to get a full sidereal birth chart, Vimshottari dasa timeline with Lagna-specific quality ratings, live transit (gochara) overlay, a dasa–transit confluence panel, a forward scanner for finding optimal timing windows, interactive planetary motion curves, and a personalised house guide with visualisations.
+A Vedic astrology app (sidereal, Lahiri ayanamsa) that answers one question for a person's whole
+life: **when are the supportive and the challenging stretches — and why?**
 
-![alt text](image.png)
+Every number on screen comes from a stated classical rule or from the Swiss Ephemeris, and every
+point carries its reason. No weights are tuned to fit anyone's life story.
 
-Positions are computed with the [Swiss Ephemeris](https://www.astro.com/swisseph/) using the **Lahiri (Chitra-Paksha) ayanamsa** — the standard for Indian predictive astrology.
+## What it shows
 
----
+| Tab | What you see |
+|---|---|
+| 🌦️ **Life Weather** | One green/red line from birth to the chosen year (green = supportive, red = challenging), with four lanes explaining it: **Dasa**, **Jupiter**, **Saturn**, **Rahu/Ketu**. Maha-dasa starts as dashed lines; hover any point for the reasons. A "Why" panel lists them for the chosen date. |
+| 🏠 **Houses over time** | The same green/red view for each house H1–H12 (Self, Wealth, … Career, Income, Expenses), counted from Lagna or Moon. |
+| 🪐 **Chart & houses** | South-Indian chart with birth planets and transits on the chosen date, a reading guide, a plain-language "explain one house", and a table of every house's sign, ruler, birth planets and current transits. |
 
-## Features
+The sidebar picks the person (saved profile or a new one by **birth city**), which factors count
+in the overall line, Rahu/Ketu node type, and the **date for details** that drives the "why"
+panel, the transit chart and the purple marker line.
 
-| Tab / Section | What it shows |
-|---------------|---------------|
-| 📜 Birth Chart | South-Indian SVG chart · nakshatra/pada · dignity · house placements |
-| 🌍 Current Transit | Gochara overlay on natal chart · Sade-Sati & Jupiter-Moon detection |
-| 🔭 Transit + Motion | Combined gochara snapshot + motion window with star-pinned positions |
-| 🏠 House Guide — What's active | Planet → sign → your house → life area for the selected transit date |
-| 🏠 House Guide — **Dasa–Transit Confluence** | Active dasa/bhukti lord + its functional quality for your Lagna + the house it is currently transiting, in one place |
-| 🏠 House Guide — **Forward Scanner** | Pick a goal (career, marriage, wealth…) → find the next dates when slow planets (Jupiter, Saturn, Rahu, Ketu) enter the relevant houses, with estimated duration |
-| 🏠 House Guide — House map & lordships | 12-house theme map · planet rulerships relative to your Lagna · notable Lagna-specific bullets |
-| 🏠 House Guide — Activation chart | Weighted bar chart of current house activation by transiting planets |
-| 🏠 House Guide — Planet journeys | Step chart showing which house each planet occupies over time |
-| 🏠 House Guide — Phase wave | Sin-wave of one planet's longitude with colored house bands |
-| 📋 Extra Info — **Dasa Timeline** | Full Maha-dasa list with **quality color-coding per Lagna** (Yogakaraka / Lagna Lord / Benefic / Mixed / Malefic / Neutral / Shadowy) + Bhukti breakdown |
-| 📋 Extra Info — Planet Positions | Nirayana longitudes, nakshatra, pada, house, dignity, retrograde |
-| 📋 Extra Info — Planet Motion | Phase + longitude charts · retrograde diamonds · pairwise interaction · closest-pass table |
+**Download a PDF summary** from the sidebar ("Prepare PDF summary", then "Download PDF"): four
+pages — birth details and the chosen date's dasa, score, reasons and chart; the Life Weather
+timeline; houses over time with the house table; the dasa timeline, the model and a disclaimer.
 
----
+Birth dates from **1800 up to today** (newborns included). Before standard time was adopted,
+the birthplace's own local mean time is used (longitude ÷ 15), not the tz database's
+reference-city time.
 
-## Timing interpretation guide
+A **birth-time check** under the title shows how many minutes of birth-time error would change
+the Lagna, and how far dasa dates move per 10 minutes.
 
-### Dasa quality labels
-
-Every dasa lord is rated for your specific Lagna based on which houses it rules:
-
-| Label | Meaning |
-|-------|---------|
-| **Yogakaraka** | Rules a trine (H5 or H9) AND a kendra (H1/4/7/10) — most powerful |
-| **Lagna Lord** | Rules the 1st house — always auspicious; shapes the whole chart |
-| **Benefic** | Rules a trine (H5 or H9) without dusthana — growth-oriented |
-| **Mixed** | Owns both a positive and a dusthana house — dual themes |
-| **Neutral** | Neither trikona nor dusthana — moderate, natural results |
-| **Malefic** | Rules only dusthana (H6/8/12) — karmic pressure, delays |
-| **Shadowy** | Rahu / Ketu — adopt the lord of the sign they occupy |
-
-### Dasa–Transit Confluence
-
-The **House Guide → Dasa–Transit Confluence** section connects two signals that are normally read separately:
-
-1. Which dasa and bhukti are active (and whether that lord is auspicious for your Lagna)
-2. Which house that same lord is currently transiting
-
-When both point to the same goal-house, the period is strongly activated. Example: if you are in a Jupiter dasa (Yogakaraka for your Lagna) and Jupiter is transiting your 10th house, career matters are doubly emphasised.
-
-### Forward Scanner
-
-The **House Guide → Forward Scanner** helps answer "when is the next good window?" for a goal:
-
-1. Select a goal from the preset list (Career, Marriage, Wealth, etc.)
-2. The app maps the goal to its relevant houses
-3. It scans forward at 7-day steps and returns the next dates when Jupiter, Saturn, Rahu, or Ketu enter those houses, with estimated durations
-
-Fast planets complete all 12 houses in under a year and are excluded — they matter for day-to-day timing, not multi-year windows.
-
----
-
-## Setup
-
-### Recommended — uv (fast, reproducible)
+## Run it
 
 ```bash
-# install uv once: https://docs.astral.sh/uv/getting-started/installation/
-uv sync                              # creates .venv and installs all dependencies
-source .venv/bin/activate
-streamlit run planet_in_motion/app.py
+uv sync --extra dev
+uv run streamlit run life_weather/ui/app.py
 ```
 
-### Alternative — plain pip
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r planet_in_motion/requirements.txt
-streamlit run planet_in_motion/app.py
-```
-
-> **Note:** `uv.lock` pins every transitive dependency for exact reproducibility. `pyproject.toml` declares the direct runtime dependencies.
-
----
-
-## Project structure
+**Your own people** live in a local `.env` file (gitignored — real birth details never go in git).
+Copy `.env.example` to `.env` and add one line per person:
 
 ```
-planet-patterns-astrology/
-├── pyproject.toml              # project metadata + direct dependencies
-├── uv.lock                     # full dependency lock (generated by uv lock)
-└── planet_in_motion/
-    ├── app.py                  # Streamlit UI — 5 tabs, sidebar, session state
-    ├── astro_core.py           # Chart engine — Swiss Ephemeris wrappers, dasa, house logic, functional nature
-    ├── chart_render.py         # SVG chart renderer (South-Indian fixed-sign grid)
-    ├── motion_viz.py           # Plotly figure builders (motion, interaction, house charts)
-    ├── config.toml             # personal birth details (gitignored)
-    ├── config.example.toml     # safe template (tracked in git)
-    └── requirements.txt        # legacy pip requirements (kept for compatibility)
+LW_PROFILE_1="Name | 1990-01-01 12:00 | Chennai"
+LW_PROFILE_2="Name | 1985-05-05 05:05 | Ottapalam | 10.77 | 76.38 | 5.5"   # lat | lon | UTC offset
 ```
 
----
+Everyone also sees **public examples** (Sachin Tendulkar, Narendra Modi) from
+`life_weather/examples.toml`, each with a note on how reliable its published birth time is.
+A city is enough; coordinates and the UTC offset in force
+on that date are filled in from an offline city list (GeoNames + IANA tz, so daylight saving and
+historical changes such as India's +6:30 in 1942–45 are handled).
 
-## Architecture & data flow
+## The model
 
-### 1. Location → coordinates (`app.py › geocode_city`)
+**Overall = ½ dasa + ½ (Jupiter + Saturn + Rahu/Ketu)**, sampled every 5 days, ~3-month average.
 
-```
-User types a city name in the sidebar
-    → geocode_city(city)                          # app.py
-        → GET nominatim.openstreetmap.org/search  # returns lat, lon
-        → GET timeapi.io/api/timezone/coordinate  # returns UTC offset in seconds
-        → fallback: tz ≈ round(lon / 15 × 2) / 2 if API unreachable
-    → st.session_state.{lat_input, lon_input, tz_input} updated
-```
+- **Dasa** — Vimshottari Maha-dasa / Antardasa from the natal Moon. Each planet gets a weight
+  from the chart: lordship from Lagna (1/5/9 +1; 3/6/11 −1; 8th −1 unless also Lagna lord),
+  dignity (exalted +1, own +0.5, debilitated −1, or 0 with neecha bhanga), placement
+  (1/4/5/7/9/10 +0.5; 6/8/12 −0.5). Period = 0.6 × MD + 0.4 × AD on a **fixed scale** (÷ the
+  largest weight the rules can produce, 3.5) so charts are comparable between people.
+- **Jupiter** (from Moon) — +1 in 2/5/7/9/11, else −0.5; ± Ashtakavarga bindus.
+- **Saturn** (from Moon) — +1 in 3/6/11; Sade Sati (12/1/2) −1; 8th −1.5; 4th −0.75; else
+  −0.25; ± bindus.
+- **Rahu/Ketu** (from Moon) — each +0.5 in 3/6/11, −0.5 in 1/8; the lane is their average.
 
-### 2. Chart calculation (`astro_core.py › build_chart`)
+**House score = ½ dasa focus + ½ transit touch** — the dasa lord's weight for every house it
+rules or sits in, plus Jupiter (+) and Saturn/Rahu/Ketu (−, but + in 3/6/11) sitting in (full)
+or aspecting (half) the house. Aspects: Jupiter 5/7/9, Saturn 3/7/10, nodes 7th.
 
-```
-build_chart(dt_local, tz_offset, lat, lon)
-    → local_to_jd()          converts local datetime → Julian Day (UTC)
-    → swe.set_sid_mode(SIDM_LAHIRI)
-    → swe.calc_ut(jd, planet_id, FLG_SIDEREAL|FLG_SPEED)
-                             for each of Sun/Moon/Mercury/Venus/Mars/Jupiter/Saturn/Rahu
-    → Ketu = (Rahu longitude + 180°) % 360
-    → swe.houses_ex(jd, lat, lon, "P", FLG_SIDEREAL)
-                             → Ascendant (sidereal longitude)
-    → returns Chart(ascendant, asc_rasi_index, planets{name→PlanetPos}, ayanamsa)
-```
+All values live in [`life_weather/analysis/assumptions.py`](life_weather/analysis/assumptions.py).
+The few that are our own choices (not classical) are labelled there.
 
-`PlanetPos` carries: `longitude` (0–360° sidereal), `rasi_index`, `deg_in_rasi`, `nakshatra`, `pada`, `retro`.
+## Accuracy
 
-### 3. Birth chart SVG (`chart_render.py › render_chart_svg`)
+- `uv run pytest` — reference charts, hand-worked scores and rule tests.
+- `uv run --with astropy python tools/crosscheck.py` — recomputes every position, Lagna and dasa
+  date **without** Swiss Ephemeris (astropy, textbook ascendant formula, Lahiri from its 1956
+  definition, Meeus mean node, dasa by hand). Last run: all positions within 0.011°.
+- Jupiter and Saturn Ashtakavarga tables match PyJHora cell for cell. The Moon and Venus rows
+  differ between sources and are locked out until settled.
 
-```
-render_chart_svg(chart, title, highlight, transit)
-    → fixed 4×4 South-Indian grid; sign position is fixed, not house-relative
-    → GRID_POS maps rasi_index → (row, col) in the grid
-    → chart.planets_in_rasi(idx) fetches natal planets for each cell
-    → transit dict overlays transiting planets with boxed arrow tags
-    → returns inline SVG string rendered via st.markdown(..., unsafe_allow_html=True)
-```
+Real birth-data fixtures live in `tests/fixtures_private.toml` (gitignored); those tests skip
+when it is absent.
 
-### 4. Dasa timeline (`astro_core.py`)
+## Layout
 
 ```
-vimshottari_periods(moon_longitude, birth_dt)
-    → nakshatra of Moon → starting lord → balance of first dasa from nakshatra fraction
-    → walks the 9-lord DASA_SEQUENCE for the full 120-year cycle
-
-sub_periods(maha_lord, maha_start, maha_years)
-    → proportional Antardasa breakdown within a Maha-dasa
-
-current_dasa(periods, on_date)
-    → finds the active Maha-dasa and Antardasa for a given date
+life_weather/
+├── core/        ephemeris, chart, dasa, dignity, ashtakavarga   (pure, no UI)
+├── analysis/    assumptions, dasa weights, gochara, timeline, houses, sensitivity
+├── viz/         Plotly figures and the SVG South-Indian chart
+├── report/      PDF summary (fpdf2) and its static matplotlib charts
+├── ui/          Streamlit: app.py wires sidebar, header and one module per tab
+├── places.py    offline city → lat/lon/timezone
+├── examples.toml public example people
+└── profiles.py  your people from .env + the examples
+tests/           pytest suite
+tools/           crosscheck.py (independent accuracy check)
 ```
-
-### 5. Dasa quality (`astro_core.py › functional_nature`)
-
-```
-functional_nature(planet, asc_rasi_index)
-    → derives the houses a planet rules via OWN dict + house_from_lagna()
-    → classifies into Yogakaraka / Lagna Lord / Benefic / Mixed / Malefic / Neutral / Shadowy
-    → returns {label, color, explanation}
-    → used in app.py for dasa table row coloring and the confluence panel
-```
-
-Classification logic:
-- **Yogakaraka**: owns a pure trikona (H5 or H9) AND a kendra (H1/4/7/10)
-- **Lagna Lord**: owns H1 regardless of second sign
-- **Benefic**: owns H5 or H9 without dusthana
-- **Mixed**: trikona+dusthana or kendra+dusthana
-- **Malefic**: only dusthana (H6/8/12) with no kendra or trikona
-- **Neutral**: upachaya only (H3/11) or other non-trikona/non-dusthana
-
-### 6. Dasa–Transit Confluence (`app.py › tab_house`)
-
-```
-For each active lord (Maha + Antardasa):
-    → functional_nature(lord, asc_rasi_index)  → quality label + color
-    → tchart.planets[lord].rasi_index          → which sign the lord transits today
-    → chart.house_of(transit_rasi_index)       → which of YOUR houses that is
-    → rendered as colored badge + house label in one line
-```
-
-### 7. Forward Scanner (`app.py › find_house_entries`)
-
-```
-find_house_entries(df, asc_rasi_index, target_houses)
-    → processes a pre-cached timeseries dataframe (7-day steps)
-    → detects house transitions: longitude // 30 maps to rasi → house_of() → house number
-    → records entry date + estimates duration until next house change
-    → returns rows sorted by entry date
-```
-
-The timeseries is computed via `cached_timeseries` (Streamlit cache) to avoid re-running Swiss Ephemeris calls on every widget interaction.
-
-### 8. Planet motion timeseries (`astro_core.py › planetary_timeseries`)
-
-```
-planetary_timeseries(start, end, tz, lat, lon, planet_names, step_days)
-    → loops over date range in step_days increments
-    → calls build_chart() at each step
-    → collects {when_local, planet, longitude, rasi, retro, phase_sin, phase_cos}
-    → phase_sin = sin(sidereal longitude) — the smooth oscillating wave
-    → cached in app.py via @st.cache_data
-```
-
-### 9. Motion figures (`motion_viz.py`)
-
-| Function | Chart | Key idea |
-|----------|-------|----------|
-| `build_motion_figure` | Two stacked subplots: sin-wave (top) + raw longitude 0–360° (bottom) | Diamonds mark retrograde samples; star pins current transit |
-| `build_interaction_figure` | Pairwise angular separation over time | Gold band = conjunction ≤12°, orange = opposition ≥168° |
-| `closest_passes` | Table of closest-approach dates per planet pair | `nsmallest` on angular separation series |
-
-### 10. House guide visualisations (`motion_viz.py`)
-
-| Function | Chart | How it works |
-|----------|-------|--------------|
-| `build_house_activation_figure` | Horizontal bar per house | Weight = Σ `PLANET_SIGNIFICANCE` of transiting planets |
-| `build_house_journey_figure` | Step chart Y = house 1–12 over time | `house = ((longitude // 30) - asc_rasi_index) % 12 + 1`; line shape = `"hv"` |
-| `build_sinwave_house_figure` | Sin-wave with colored vertical bands | Bands are `add_vrect` segments keyed on house transitions; each labeled H1–H12 |
-
----
-
-## Key constants (`astro_core.py`)
-
-| Constant | Purpose |
-|----------|---------|
-| `RASIS` | Malayalam rasi names (Medam … Meena) |
-| `RASIS_EN` | Western equivalents (Aries … Pisces) |
-| `NAKSHATRAS` | 27 nakshatra names |
-| `DASA_SEQUENCE` | 9-lord Vimshottari order with year lengths |
-| `EXALT / DEBIL / OWN` | Dignity lookup tables by rasi index |
-| `HOUSE_KEYWORDS / HOUSE_SIGNIFICATIONS` | Short and long descriptions for H1–H12 |
-| `PLANETS` | `{name: swisseph_id}` for the 8 computed bodies |
-| `PLANET_KARAKA` | Natural significator description per planet |
-| `GOAL_HOUSES` | Goal label → list of relevant house numbers for the forward scanner |
-
----
-
-## Ephemeris note
-
-Swiss Ephemeris stores data in binary files. `pyswisseph` bundles the essential files; for dates before 1800 CE or after 2400 CE you may need to download the full `ephe/` directory from [astro.com](https://www.astro.com/swisseph/ephe/).
