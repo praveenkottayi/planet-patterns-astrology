@@ -3,6 +3,8 @@ name = "life-weather"
 version = "2.0.0"
 description = "Vedic astrology (sidereal, Lahiri): Life Weather timeline, houses over time, and a South-Indian chart — every number from a stated classical rule"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "streamlit>=1.40",

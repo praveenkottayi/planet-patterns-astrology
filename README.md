@@ -102,3 +102,7 @@ life_weather/
 tests/           pytest suite
 tools/           crosscheck.py (independent accuracy check)
 ```
+
+## License
+
+[MIT](LICENSE) © 2026 Praveen Vijayan — contact praveenkottayi@gmail.com.
